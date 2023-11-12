@@ -44,8 +44,9 @@ const ticketRate = document.querySelector('#ticketRate');  //套票星級
 const ticketDescription = document.querySelector('#ticketDescription');  //套票描述
 const inputFields = document.querySelectorAll('.form-group input,#ticketRegion,textarea');  //所有輸入欄位與select
 const errorMessage = document.querySelectorAll('.alert-message p');  //錯誤提示訊息
-const regionSearch = document.querySelector('.regionSearch');  //搜尋區div class
-const searchResult_text =document.querySelector('#searchResult-text');  //搜尋結果的文字
+const regionSearch = document.querySelector('.regionSearch');  //搜尋區select class
+const searchResult_text = document.querySelector('#searchResult-text');  //搜尋結果的文字
+const cantFind_area = document.querySelector('.cantFind-area');  //搜尋區 cantFind
 
 // Html字串函式化
 function strHtml(item){
@@ -82,14 +83,17 @@ function strHtml(item){
 		`;
 	return str2;
 }
-//資料筆數顯示函式化
-function showDataNum(all,part){
-	if(part !== null){
-		searchResult_text.textContent = `本次搜尋共 ${part} 筆資料`;
-	}
-	else if(all !== null){
-		searchResult_text.textContent = `本次搜尋共 ${all} 筆資料`;
-	}
+
+function noFound(){
+	cantFind_area.setAttribute('style','display:block');
+	let str3='';
+	str3 += `
+	<div class="cantFind-area">
+		<h3>查無此關鍵字資料</h3>
+		<img src="https://github.com/hexschool/2022-web-layout-training/blob/main/js_week5/no_found.png?raw=true" alt="">
+	</div>
+  	`;
+	return str3;
 }
 
 //初始化環境
@@ -98,8 +102,9 @@ function init(){
     data.forEach(function(item){
         str+=strHtml(item);
     });
+	cantFind_area.setAttribute('style','display:none');
     ticketCard_area.innerHTML = str;
-	showDataNum(data.length,null);
+	searchResult_text.textContent = `本次搜尋共 ${data.length} 筆資料`;
 }
 
 init();
@@ -135,18 +140,25 @@ addTicket_btn.addEventListener('click',function(e){
 		}
 		data.push(obj);
         inputFields.forEach(item => item.value = "");  //使用forEach，箭頭函式讓輸入欄位的value設為空值
-		showDataNum(data.length,null);  // 成功新增後將data總筆數值帶入showDataNum()並寫入HTML
+		searchResult_text.textContent = `本次搜尋共 ${data.length} 筆資料`;  // 成功新增後將data總筆數值帶入寫入HTML
         init();  // 成功新增後呼叫init() 再初始化一次新增之後，data中的資料
     }
 });
 
 
+
 //篩選套票邏輯
 let isFirstClick = true;   //設定第一次點擊選單為true
+
+document.body.addEventListener('click', function (e) {  //監聽整個網頁的body被點擊時
+    if (regionSearch.contains(e.target) === false) {   // 判斷如果點擊區域不在regionSearch上，且不是在regionSearch的子元素上
+		isFirstClick = true;  //將第一次點擊設為true
+    }
+});
+
 regionSearch.addEventListener('click',e=>{
 	let str='';
 	let filterNum = 0;  //設定搜尋的資料筆數
-	
 	if( e.target.value === "地區搜尋"){   //如果點擊地區搜尋的選項，就return
 		isFirstClick = false;
 		return;
@@ -155,6 +167,8 @@ regionSearch.addEventListener('click',e=>{
 		isFirstClick = false;
 		return;
 	}
+	
+
 	// 如果用範圍監聽 searchArea  要對其他元件做防呆可以參考以下
     // if(e.target.value === undefined){
 	// 	isFirstClick=true;
@@ -172,13 +186,18 @@ regionSearch.addEventListener('click',e=>{
 	//第二次點擊value才會進行資料庫搜尋
 	//點擊的選項與資料庫一筆一筆做比對，並且呼叫strHtml存入、匹配筆數+1，最後將資料寫入HTML，isFirstClick重設為true
     data.forEach(function(item,index){
-        if(e.target.value == item.area || e.target.value == "全部地區"){
+        if(e.target.value === item.area || e.target.value === "全部地區"){
 			str+=strHtml(item);
 			filterNum++;
         }
     });
-	ticketCard_area.innerHTML = str;
-	showDataNum(null,filterNum)  // 將匹配資料的加總筆數值帶入showDataNum()並寫入HTML
-	isFirstClick = true;
+
+	cantFind_area.setAttribute('style','display:none');
+	ticketCard_area.innerHTML = str;   //將字串寫入HTML
+	searchResult_text.textContent = `本次搜尋共 ${filterNum} 筆資料`  // 將匹配資料的加總筆數值寫入HTML
+	isFirstClick = true;  //第一次點擊設為true
+	if(filterNum === 0){
+		str = noFound();  //如果篩選筆數為0筆，str字串改為noFound()的字串
+	}
 });
 
