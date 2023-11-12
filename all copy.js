@@ -100,7 +100,7 @@ function noFound(){
 function init(){
     let str = '';
     data.forEach(function(item){
-        str+=strHtml(item);  
+        str+=strHtml(item);
     });
 	cantFind_area.setAttribute('style','display:none');
     ticketCard_area.innerHTML = str;
@@ -148,11 +148,43 @@ addTicket_btn.addEventListener('click',function(e){
 
 
 //篩選套票邏輯
-regionSearch.addEventListener('change',e=>{
+let isFirstClick = true;   //設定第一次點擊選單為true
+
+document.body.addEventListener('click', function (e) {  //監聽整個網頁的body被點擊時
+    if (regionSearch.contains(e.target) === false) {   // 判斷如果點擊區域不在regionSearch上，且不是在regionSearch的子元素上
+		isFirstClick = true;  //將第一次點擊設為true
+    }
+});
+
+regionSearch.addEventListener('click',e=>{
 	let str='';
 	let filterNum = 0;  //設定搜尋的資料筆數
+	if( e.target.value === "地區搜尋"){   //如果點擊地區搜尋的選項，就return
+		isFirstClick = false;
+		return;
+	}
+	if(isFirstClick == true){   //如果是第一次點擊列表使其展開，則關閉isFirstClick，並return
+		isFirstClick = false;
+		return;
+	}
 	
-	//點擊的選項與資料庫一筆一筆做比對，並且呼叫strHtml存入、匹配筆數+1，最後將資料寫入HTML
+
+	// 如果用範圍監聽 searchArea  要對其他元件做防呆可以參考以下
+    // if(e.target.value === undefined){
+	// 	isFirstClick=true;
+	// 	return;
+	// }
+	// else if(e.target.value === "地區搜尋"){
+	// 	isFirstClick = false;
+	// 	return;
+	// }
+	// if(isFirstClick == true){
+	// 	isFirstClick = false;
+	// 	return;
+	// }
+	
+	//第二次點擊value才會進行資料庫搜尋
+	//點擊的選項與資料庫一筆一筆做比對，並且呼叫strHtml存入、匹配筆數+1，最後將資料寫入HTML，isFirstClick重設為true
     data.forEach(function(item,index){
         if(e.target.value === item.area || e.target.value === "全部地區"){
 			str+=strHtml(item);
@@ -160,11 +192,12 @@ regionSearch.addEventListener('change',e=>{
         }
     });
 
-	cantFind_area.setAttribute('style','display:none');   //無資料顯示的畫面重設為none
+	cantFind_area.setAttribute('style','display:none');
 	ticketCard_area.innerHTML = str;   //將字串寫入HTML
 	searchResult_text.textContent = `本次搜尋共 ${filterNum} 筆資料`  // 將匹配資料的加總筆數值寫入HTML
+	isFirstClick = true;  //第一次點擊設為true
 	if(filterNum === 0){
-		str = noFound();  //如果篩選筆數為0筆，str字串改為noFound()的字串，函式會將無資料畫面顯示
+		str = noFound();  //如果篩選筆數為0筆，str字串改為noFound()的字串
 	}
 });
 
